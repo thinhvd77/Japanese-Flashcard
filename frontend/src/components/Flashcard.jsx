@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 const FACE_LABELS = ["Kanji", "Nghĩa", "Phiên âm", "Hán Việt", "Ví dụ"];
 
@@ -14,11 +14,13 @@ function Flashcard({ card, currentFace, onNextFace, onSetFace }) {
     const containerRef = useRef(null);
     const [touchStart, setTouchStart] = useState(null);
     const [touchEnd, setTouchEnd] = useState(null);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
 
     // Minimum swipe distance (in px)
     const minSwipeDistance = 50;
 
     function handleTouchStart(e) {
+        setIsTouchDevice(true);
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
     }
@@ -28,27 +30,34 @@ function Flashcard({ card, currentFace, onNextFace, onSetFace }) {
     }
 
     function handleTouchEnd() {
-        if (!touchStart || !touchEnd) {
-            // It was a tap, not a swipe
-            onNextFace();
+        if (!touchStart) {
             return;
         }
 
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
+        // Check if it was a swipe or a tap
+        if (touchEnd !== null) {
+            const distance = touchStart - touchEnd;
+            const isSwipe = Math.abs(distance) > minSwipeDistance;
 
-        if (isLeftSwipe || isRightSwipe) {
-            // Swipe detected - but we're using tap for face change
-            // So swipe can be used for card navigation (handled by parent)
-        } else {
-            // Tap
-            onNextFace();
+            if (isSwipe) {
+                // Swipe detected - don't change face (could be used for card navigation)
+                setTouchStart(null);
+                setTouchEnd(null);
+                return;
+            }
         }
+
+        // It was a tap
+        onNextFace();
+        setTouchStart(null);
+        setTouchEnd(null);
     }
 
     function handleClick() {
-        onNextFace();
+        // Only handle click on non-touch devices to avoid double trigger
+        if (!isTouchDevice) {
+            onNextFace();
+        }
     }
 
     // Calculate rotation based on current face

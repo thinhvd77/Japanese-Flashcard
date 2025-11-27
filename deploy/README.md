@@ -2,13 +2,16 @@
 
 Hướng dẫn deploy ứng dụng Japanese Flashcard lên EC2 Free Tier.
 
+**Domain**: https://fc.thinhvo.work
+
 ## Yêu cầu
 
 - EC2 instance (t2.micro hoặc t3.micro free tier)
 - Ubuntu 24.04 LTS
 - Node.js đã cài sẵn
 - Nginx đã cài sẵn
-- Mở port 80 (HTTP) trong Security Group
+- Mở port 80 (HTTP) và 443 (HTTPS) trong Security Group
+- Domain fc.thinhvo.work trỏ về IP của EC2
 
 ## Các bước deploy
 
@@ -39,7 +42,21 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-### 5. Setup Nginx
+### 5. Setup SSL với Let's Encrypt
+
+```bash
+# Cài đặt Certbot
+sudo apt update
+sudo apt install -y certbot python3-certbot-nginx
+
+# Tạo chứng chỉ SSL (tạm thời disable nginx config)
+sudo certbot certonly --standalone -d fc.thinhvo.work
+
+# Hoặc nếu nginx đang chạy, dùng plugin nginx
+sudo certbot --nginx -d fc.thinhvo.work
+```
+
+### 6. Setup Nginx
 
 ```bash
 # Copy nginx config
@@ -58,7 +75,17 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 6. Setup PM2 startup
+### 7. Setup tự động gia hạn SSL
+
+```bash
+# Test renew
+sudo certbot renew --dry-run
+
+# Certbot tự động thêm cron job, kiểm tra:
+sudo systemctl status certbot.timer
+```
+
+### 8. Setup PM2 startup
 
 ```bash
 pm2 startup
