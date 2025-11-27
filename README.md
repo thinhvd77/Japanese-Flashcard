@@ -1,70 +1,98 @@
-# Getting Started with Create React App
+# Japanese Flashcard App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Ứng dụng học tiếng Nhật với flashcard 5 mặt, tối ưu cho mobile.
 
-## Available Scripts
+## Tính năng
 
-In the project directory, you can run:
+- 📚 Upload file Excel để tạo bộ từ vựng
+- 🎴 Flashcard 5 mặt: Kanji, Nghĩa, Phiên âm, Hán Việt, Ví dụ
+- 📱 Giao diện mobile-first, touch-friendly
+- 🔀 Trộn thẻ ngẫu nhiên
+- ⌨️ Hỗ trợ điều hướng bằng bàn phím
 
-### `npm start`
+## Yêu cầu hệ thống
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js 18+
+- npm hoặc yarn
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Cấu trúc dự án
 
-### `npm test`
+```
+japanese-flashcard/
+├── backend/          # Express API server
+│   ├── src/
+│   │   ├── index.js
+│   │   ├── database.js
+│   │   └── routes/
+│   └── package.json
+├── frontend/         # React Vite app
+│   ├── src/
+│   │   ├── pages/
+│   │   ├── components/
+│   │   └── api.js
+│   └── package.json
+├── deploy/           # Deployment configs
+└── README.md
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Cài đặt & Chạy local
 
-### `npm run build`
+### Backend
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Server chạy tại: http://localhost:3001
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Frontend
 
-### `npm run eject`
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+App chạy tại: http://localhost:3000
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Định dạng file Excel
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+File Excel cần có các cột sau (không phân biệt hoa thường):
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+| Cột | Mô tả | Tên thay thế |
+|-----|-------|--------------|
+| Kanji | Chữ Kanji | 漢字 |
+| Meaning | Nghĩa tiếng Việt | Nghĩa, nghĩa |
+| Pronunciation | Phiên âm Hiragana | Hiragana, Phiên âm, ひらがな |
+| Sino-Vietnamese | Âm Hán Việt | Hán Việt, hán việt |
+| Example | Câu ví dụ | Ví dụ, 例文 |
 
-## Learn More
+### Ví dụ file Excel:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+| Kanji | Meaning | Pronunciation | Sino-Vietnamese | Example |
+|-------|---------|---------------|-----------------|---------|
+| 日本 | Nhật Bản | にほん | Nhật Bản | 日本は美しい国です |
+| 勉強 | Học tập | べんきょう | Miễn Cường | 毎日勉強します |
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Deploy lên EC2 (Ubuntu 24.04)
 
-### Code Splitting
+Xem chi tiết trong file `deploy/README.md`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Quick deploy:
 
-### Analyzing the Bundle Size
+```bash
+# Copy files lên server
+scp -r ./* user@your-ec2-ip:/home/user/japanese-flashcard/
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+# SSH vào server và chạy script
+ssh user@your-ec2-ip
+cd /home/user/japanese-flashcard/deploy
+chmod +x deploy.sh
+./deploy.sh
+```
 
-### Making a Progressive Web App
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+MIT

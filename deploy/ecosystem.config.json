@@ -1,0 +1,20 @@
+{
+    "apps": [
+        {
+            "name": "japanese-flashcard-api",
+            "script": "src/index.js",
+            "cwd": "/home/ubuntu/japanese-flashcard/backend",
+            "instances": 1,
+            "exec_mode": "fork",
+            "max_memory_restart": "300M",
+            "env": {
+                "NODE_ENV": "production",
+                "PORT": 3001
+            },
+            "error_file": "/home/ubuntu/japanese-flashcard/logs/error.log",
+            "out_file": "/home/ubuntu/japanese-flashcard/logs/out.log",
+            "merge_logs": true,
+            "log_date_format": "YYYY-MM-DD HH:mm:ss Z"
+        }
+    ]
+}
