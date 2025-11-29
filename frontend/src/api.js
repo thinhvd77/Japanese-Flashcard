@@ -62,3 +62,31 @@ export async function updateVocabularySet(id, data) {
 
     return response.json();
 }
+
+export async function markFlashcardLearned(id, learned) {
+    const response = await fetch(`${API_BASE}/vocabulary/flashcards/${id}/learned`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ learned }),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to update flashcard');
+    }
+
+    return response.json();
+}
+
+export async function resetVocabularySet(id) {
+    const response = await fetch(`${API_BASE}/vocabulary/sets/${id}/reset`, {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to reset vocabulary set');
+    }
+
+    return response.json();
+}

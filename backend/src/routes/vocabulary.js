@@ -62,8 +62,17 @@ router.get('/sets/:id', (req, res) => {
             return res.status(404).json({ error: 'Vocabulary set not found' });
         }
 
-        const flashcards = db.prepare('SELECT * FROM flashcards WHERE set_id = ?').all(req.params.id);
-        res.json({ ...set, flashcards });
+        // Only get flashcards that are not learned (learned = 0 or NULL)
+        const includeAll = req.query.includeAll === 'true';
+        const flashcards = includeAll
+            ? db.prepare('SELECT * FROM flashcards WHERE set_id = ?').all(req.params.id)
+            : db.prepare('SELECT * FROM flashcards WHERE set_id = ? AND (learned = 0 OR learned IS NULL)').all(req.params.id);
+
+        // Also get total count for progress tracking
+        const totalCount = db.prepare('SELECT COUNT(*) as count FROM flashcards WHERE set_id = ?').get(req.params.id).count;
+        const learnedCount = db.prepare('SELECT COUNT(*) as count FROM flashcards WHERE set_id = ? AND learned = 1').get(req.params.id).count;
+
+        res.json({ ...set, flashcards, totalCount, learnedCount });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -169,6 +178,41 @@ router.patch('/sets/:id', (req, res) => {
 
         const updated = db.prepare('SELECT * FROM vocabulary_sets WHERE id = ?').get(req.params.id);
         res.json(updated);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Mark a flashcard as learned or not learned
+router.patch('/flashcards/:id/learned', (req, res) => {
+    try {
+        const { learned } = req.body;
+        const result = db.prepare(`
+            UPDATE flashcards 
+            SET learned = ?
+            WHERE id = ?
+        `).run(learned ? 1 : 0, req.params.id);
+
+        if (result.changes === 0) {
+            return res.status(404).json({ error: 'Flashcard not found' });
+        }
+
+        res.json({ message: 'Flashcard updated successfully', learned: !!learned });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Reset all flashcards in a set to not learned
+router.post('/sets/:id/reset', (req, res) => {
+    try {
+        const result = db.prepare(`
+            UPDATE flashcards 
+            SET learned = 0
+            WHERE set_id = ?
+        `).run(req.params.id);
+
+        res.json({ message: 'All flashcards reset successfully', count: result.changes });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

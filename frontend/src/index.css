@@ -449,6 +449,24 @@ body {
     transform: none;
 }
 
+.nav-btn-learned {
+    background: linear-gradient(135deg, var(--success), #38a169);
+    color: white;
+}
+
+.nav-btn-learned:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a);
+}
+
+.nav-btn-skip {
+    background: linear-gradient(135deg, var(--warning), #dd6b20);
+    color: white;
+}
+
+.nav-btn-skip:hover {
+    background: linear-gradient(135deg, #dd6b20, #c05621);
+}
+
 .card-progress {
     display: flex;
     align-items: center;

@@ -5,7 +5,7 @@ const fs = require('fs');
 // Ensure data directory exists
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
 const db = new Database(path.join(dataDir, 'flashcards.db'));
@@ -33,11 +33,19 @@ db.exec(`
     pronunciation TEXT,
     sino_vietnamese TEXT,
     example TEXT,
+    learned INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (set_id) REFERENCES vocabulary_sets(id) ON DELETE CASCADE
   );
 
   CREATE INDEX IF NOT EXISTS idx_flashcards_set_id ON flashcards(set_id);
 `);
+
+// Migration: Add learned column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE flashcards ADD COLUMN learned INTEGER DEFAULT 0`);
+} catch (e) {
+  // Column already exists, ignore error
+}
 
 module.exports = db;
