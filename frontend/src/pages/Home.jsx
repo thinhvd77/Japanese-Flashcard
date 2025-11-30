@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
     getVocabularySets,
@@ -20,14 +20,17 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
-    const [draggedItem, setDraggedItem] = useState(null);
-    const [dragOverItem, setDragOverItem] = useState(null);
     const [settingsOpen, setSettingsOpen] = useState(null);
     const [dropdownPosition, setDropdownPosition] = useState({
         top: 0,
         left: 0,
     });
-    const dragNode = useRef(null);
+    const [moveMenuOpen, setMoveMenuOpen] = useState(null);
+    const [moveMenuPosition, setMoveMenuPosition] = useState({
+        top: 0,
+        left: 0,
+    });
+    const [positionInput, setPositionInput] = useState("");
 
     useEffect(() => {
         loadSets();
@@ -72,54 +75,81 @@ function Home() {
         });
     }
 
-    // Drag and drop handlers
-    function handleDragStart(e, index) {
-        setDraggedItem(index);
-        dragNode.current = e.target;
-        dragNode.current.addEventListener("dragend", handleDragEnd);
-
-        // Make the drag image semi-transparent
-        setTimeout(() => {
-            if (dragNode.current) {
-                dragNode.current.style.opacity = "0.5";
-            }
-        }, 0);
-    }
-
-    function handleDragEnter(e, index) {
-        if (index !== draggedItem) {
-            setDragOverItem(index);
-
-            // Reorder the list
-            const newSets = [...sets];
-            const draggedItemContent = newSets[draggedItem];
-            newSets.splice(draggedItem, 1);
-            newSets.splice(index, 0, draggedItemContent);
-
-            setDraggedItem(index);
-            setSets(newSets);
-        }
-    }
-
-    function handleDragEnd() {
-        if (dragNode.current) {
-            dragNode.current.style.opacity = "1";
-            dragNode.current.removeEventListener("dragend", handleDragEnd);
-        }
-
-        setDraggedItem(null);
-        setDragOverItem(null);
-        dragNode.current = null;
-
-        // Save the new order to the backend
-        const orderedIds = sets.map((set) => set.id);
-        reorderVocabularySets(orderedIds).catch((err) => {
-            console.error("Failed to save order:", err);
-        });
-    }
-
-    function handleDragOver(e) {
+    // Move set up or down
+    async function moveSet(index, direction, e) {
         e.preventDefault();
+        e.stopPropagation();
+
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= sets.length) return;
+
+        const newSets = [...sets];
+        const temp = newSets[index];
+        newSets[index] = newSets[newIndex];
+        newSets[newIndex] = temp;
+
+        setSets(newSets);
+        await saveOrder(newSets);
+    }
+
+    // Move set to specific position
+    async function moveToPosition(fromIndex, toIndex, e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (toIndex < 0 || toIndex >= sets.length || fromIndex === toIndex)
+            return;
+
+        const newSets = [...sets];
+        const [removed] = newSets.splice(fromIndex, 1);
+        newSets.splice(toIndex, 0, removed);
+
+        setSets(newSets);
+        setMoveMenuOpen(null);
+        setPositionInput("");
+        await saveOrder(newSets);
+    }
+
+    // Save order to backend
+    async function saveOrder(newSets) {
+        const orderedIds = newSets.map((set) => set.id);
+        try {
+            await reorderVocabularySets(orderedIds);
+        } catch (err) {
+            console.error("Failed to save order:", err);
+        }
+    }
+
+    // Toggle move menu
+    function toggleMoveMenu(setId, index, e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (moveMenuOpen === setId) {
+            setMoveMenuOpen(null);
+        } else {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setMoveMenuPosition({
+                top: rect.bottom + 5,
+                left: Math.max(
+                    10,
+                    Math.min(rect.left - 50, window.innerWidth - 180)
+                ),
+            });
+            setMoveMenuOpen(setId);
+            setPositionInput("");
+        }
+    }
+
+    // Handle position input
+    function handlePositionSubmit(fromIndex, e) {
+        e.preventDefault();
+        const targetPos = parseInt(positionInput, 10);
+        if (!isNaN(targetPos) && targetPos >= 1 && targetPos <= sets.length) {
+            moveToPosition(fromIndex, targetPos - 1);
+        }
     }
 
     async function handleDefaultFaceChange(setId, newFace, e) {
@@ -165,11 +195,18 @@ function Home() {
             ) {
                 setSettingsOpen(null);
             }
+            if (
+                moveMenuOpen &&
+                !e.target.closest(".move-menu-dropdown") &&
+                !e.target.closest(".position-badge")
+            ) {
+                setMoveMenuOpen(null);
+            }
         }
 
         document.addEventListener("click", handleClickOutside);
         return () => document.removeEventListener("click", handleClickOutside);
-    }, [settingsOpen]);
+    }, [settingsOpen, moveMenuOpen]);
 
     return (
         <>
@@ -214,70 +251,167 @@ function Home() {
                     </div>
                 ) : (
                     <div className="set-list">
-                        <p className="drag-hint">
-                            💡 Kéo thả để sắp xếp lại thứ tự
-                        </p>
                         {sets.map((set, index) => (
-                            <Link
-                                key={set.id}
-                                to={`/study/${set.id}`}
-                                className={`set-item ${
-                                    draggedItem === index ? "dragging" : ""
-                                } ${dragOverItem === index ? "drag-over" : ""}`}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragEnter={(e) => handleDragEnter(e, index)}
-                                onDragOver={handleDragOver}
-                            >
-                                <div
-                                    className="drag-handle"
-                                    onMouseDown={(e) => e.stopPropagation()}
+                            <div key={set.id} className="set-item-wrapper">
+                                <button
+                                    className="position-badge"
+                                    onClick={(e) =>
+                                        toggleMoveMenu(set.id, index, e)
+                                    }
+                                    title="Nhấn để di chuyển"
                                 >
-                                    ⋮⋮
+                                    {index + 1}
+                                </button>
+                                <div className="set-reorder-buttons">
+                                    <button
+                                        className="reorder-btn"
+                                        onClick={(e) => moveSet(index, -1, e)}
+                                        disabled={index === 0}
+                                        title="Di chuyển lên"
+                                    >
+                                        ▲
+                                    </button>
+                                    <button
+                                        className="reorder-btn"
+                                        onClick={(e) => moveSet(index, 1, e)}
+                                        disabled={index === sets.length - 1}
+                                        title="Di chuyển xuống"
+                                    >
+                                        ▼
+                                    </button>
                                 </div>
-                                <div className="set-info">
-                                    <div className="set-name">{set.name}</div>
-                                    <div className="set-meta">
-                                        {set.card_count} từ •{" "}
-                                        {formatDate(set.created_at)} •{" "}
-                                        <span className="default-face-label">
-                                            {
-                                                FACE_OPTIONS[
-                                                    set.default_face || 0
-                                                ]?.label
-                                            }
-                                        </span>
+                                <Link
+                                    to={`/study/${set.id}`}
+                                    className="set-item"
+                                >
+                                    <div className="set-info">
+                                        <div className="set-name">
+                                            {set.name}
+                                        </div>
+                                        <div className="set-meta">
+                                            {set.card_count} từ •{" "}
+                                            {formatDate(set.created_at)} •{" "}
+                                            <span className="default-face-label">
+                                                {
+                                                    FACE_OPTIONS[
+                                                        set.default_face || 0
+                                                    ]?.label
+                                                }
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                                <button
-                                    className="btn btn-sm btn-settings"
-                                    onClick={(e) => toggleSettings(set.id, e)}
-                                    title="Cài đặt"
-                                >
-                                    ⚙️
-                                </button>
-                                <button
-                                    className="btn btn-sm"
-                                    style={{
-                                        background:
-                                            deleteConfirm === set.id
-                                                ? "var(--danger)"
-                                                : "transparent",
-                                        color:
-                                            deleteConfirm === set.id
-                                                ? "white"
-                                                : "var(--danger)",
-                                        padding: "0.4rem 0.8rem",
-                                    }}
-                                    onClick={(e) => handleDelete(set.id, e)}
-                                >
-                                    {deleteConfirm === set.id
-                                        ? "Xác nhận?"
-                                        : "🗑️"}
-                                </button>
-                                <span className="set-arrow">›</span>
-                            </Link>
+                                    <button
+                                        className="btn btn-sm btn-settings"
+                                        onClick={(e) =>
+                                            toggleSettings(set.id, e)
+                                        }
+                                        title="Cài đặt"
+                                    >
+                                        ⚙️
+                                    </button>
+                                    <button
+                                        className="btn btn-sm"
+                                        style={{
+                                            background:
+                                                deleteConfirm === set.id
+                                                    ? "var(--danger)"
+                                                    : "transparent",
+                                            color:
+                                                deleteConfirm === set.id
+                                                    ? "white"
+                                                    : "var(--danger)",
+                                            padding: "0.4rem 0.8rem",
+                                        }}
+                                        onClick={(e) => handleDelete(set.id, e)}
+                                    >
+                                        {deleteConfirm === set.id
+                                            ? "Xác nhận?"
+                                            : "🗑️"}
+                                    </button>
+                                    <span className="set-arrow">›</span>
+                                </Link>
+                            </div>
                         ))}
+                    </div>
+                )}
+
+                {/* Move menu dropdown */}
+                {moveMenuOpen && (
+                    <div
+                        className="move-menu-dropdown"
+                        style={{
+                            top: moveMenuPosition.top,
+                            left: moveMenuPosition.left,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="settings-title">Di chuyển đến:</div>
+                        {(() => {
+                            const currentIndex = sets.findIndex(
+                                (s) => s.id === moveMenuOpen
+                            );
+                            return (
+                                <>
+                                    <button
+                                        className="settings-option"
+                                        onClick={(e) =>
+                                            moveToPosition(currentIndex, 0, e)
+                                        }
+                                        disabled={currentIndex === 0}
+                                    >
+                                        ⬆️ Đầu danh sách
+                                    </button>
+                                    <button
+                                        className="settings-option"
+                                        onClick={(e) =>
+                                            moveToPosition(
+                                                currentIndex,
+                                                sets.length - 1,
+                                                e
+                                            )
+                                        }
+                                        disabled={
+                                            currentIndex === sets.length - 1
+                                        }
+                                    >
+                                        ⬇️ Cuối danh sách
+                                    </button>
+                                    <div className="position-input-wrapper">
+                                        <form
+                                            onSubmit={(e) =>
+                                                handlePositionSubmit(
+                                                    currentIndex,
+                                                    e
+                                                )
+                                            }
+                                        >
+                                            <input
+                                                type="number"
+                                                className="position-input"
+                                                placeholder={`1-${sets.length}`}
+                                                min="1"
+                                                max={sets.length}
+                                                value={positionInput}
+                                                onChange={(e) =>
+                                                    setPositionInput(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="position-go-btn"
+                                            >
+                                                Đi
+                                            </button>
+                                        </form>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
 

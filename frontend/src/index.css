@@ -254,13 +254,6 @@ body {
     gap: 0.75rem;
 }
 
-.drag-hint {
-    text-align: center;
-    color: var(--text-light);
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
-}
-
 .set-item {
     display: flex;
     align-items: center;
@@ -285,28 +278,120 @@ body {
     transform: translateX(0);
 }
 
-.set-item.dragging {
-    opacity: 0.5;
-    transform: scale(1.02);
+.set-item-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.position-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.position-badge:hover {
+    transform: scale(1.1);
     box-shadow: var(--shadow-lg);
 }
 
-.set-item.drag-over {
-    border: 2px dashed var(--primary);
+.position-badge:active {
+    transform: scale(0.95);
 }
 
-.drag-handle {
-    cursor: grab;
-    padding: 0.5rem;
-    margin-right: 0.5rem;
+.set-reorder-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reorder-btn {
+    width: 24px;
+    height: 20px;
+    border: none;
+    background: var(--card-bg);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.6rem;
     color: var(--text-light);
-    font-size: 1rem;
-    letter-spacing: -2px;
-    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
 }
 
-.drag-handle:active {
-    cursor: grabbing;
+.reorder-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+}
+
+.reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Move menu dropdown */
+.move-menu-dropdown {
+    position: fixed;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    z-index: 1000;
+    min-width: 160px;
+}
+
+.position-input-wrapper {
+    padding: 0.5rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.25rem;
+}
+
+.position-input-wrapper form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.position-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    width: 60px;
+    text-align: center;
+}
+
+.position-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.position-go-btn {
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.position-go-btn:hover {
+    opacity: 0.9;
 }
 
 .set-info {
