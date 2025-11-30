@@ -90,3 +90,19 @@ export async function resetVocabularySet(id) {
 
     return response.json();
 }
+
+export async function reorderVocabularySets(orderedIds) {
+    const response = await fetch(`${API_BASE}/vocabulary/sets/reorder`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderedIds }),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to reorder vocabulary sets');
+    }
+
+    return response.json();
+}

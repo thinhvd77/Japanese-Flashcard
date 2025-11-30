@@ -21,6 +21,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
+    sort_order INTEGER DEFAULT 0,
+    default_face INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -44,6 +46,20 @@ db.exec(`
 // Migration: Add learned column if it doesn't exist
 try {
   db.exec(`ALTER TABLE flashcards ADD COLUMN learned INTEGER DEFAULT 0`);
+} catch (e) {
+  // Column already exists, ignore error
+}
+
+// Migration: Add sort_order column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE vocabulary_sets ADD COLUMN sort_order INTEGER DEFAULT 0`);
+} catch (e) {
+  // Column already exists, ignore error
+}
+
+// Migration: Add default_face column if it doesn't exist
+try {
+  db.exec(`ALTER TABLE vocabulary_sets ADD COLUMN default_face INTEGER DEFAULT 0`);
 } catch (e) {
   // Column already exists, ignore error
 }

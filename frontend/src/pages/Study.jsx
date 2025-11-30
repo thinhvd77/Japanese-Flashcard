@@ -15,6 +15,7 @@ function Study() {
     const [error, setError] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentFace, setCurrentFace] = useState(0);
+    const [defaultFace, setDefaultFace] = useState(0);
     const [shuffled, setShuffled] = useState(false);
     const [cards, setCards] = useState([]);
     const [totalCount, setTotalCount] = useState(0);
@@ -32,6 +33,10 @@ function Study() {
             setCards(data.flashcards || []);
             setTotalCount(data.totalCount || data.flashcards?.length || 0);
             setLearnedCount(data.learnedCount || 0);
+            // Set the default face from the vocabulary set settings
+            const face = data.default_face || 0;
+            setDefaultFace(face);
+            setCurrentFace(face);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -56,11 +61,11 @@ function Study() {
             if (currentIndex >= newCards.length && newCards.length > 0) {
                 setCurrentIndex(newCards.length - 1);
             }
-            setCurrentFace(0);
+            setCurrentFace(defaultFace);
         } catch (err) {
             console.error("Failed to mark as learned:", err);
         }
-    }, [cards, currentIndex]);
+    }, [cards, currentIndex, defaultFace]);
 
     // Mark current card as not learned and go to next
     const markNotLearnedAndNext = useCallback(() => {
@@ -73,8 +78,8 @@ function Study() {
             // At the last card, wrap to first
             setCurrentIndex(0);
         }
-        setCurrentFace(0);
-    }, [cards.length, currentIndex]);
+        setCurrentFace(defaultFace);
+    }, [cards.length, currentIndex, defaultFace]);
 
     const nextFace = useCallback(() => {
         setCurrentFace((prev) => (prev + 1) % 5);
@@ -88,7 +93,7 @@ function Study() {
         const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
         setCards(shuffledCards);
         setCurrentIndex(0);
-        setCurrentFace(0);
+        setCurrentFace(defaultFace);
         setShuffled(true);
     }
 
@@ -97,7 +102,7 @@ function Study() {
             await resetVocabularySet(setId);
             await loadVocabSet();
             setCurrentIndex(0);
-            setCurrentFace(0);
+            setCurrentFace(defaultFace);
             setShuffled(false);
         } catch (err) {
             console.error("Failed to reset cards:", err);
@@ -107,7 +112,7 @@ function Study() {
     function resetCards() {
         setCards(vocabSet?.flashcards || []);
         setCurrentIndex(0);
-        setCurrentFace(0);
+        setCurrentFace(defaultFace);
         setShuffled(false);
     }
 

@@ -46,7 +46,7 @@ router.get('/sets', (req, res) => {
       FROM vocabulary_sets vs 
       LEFT JOIN flashcards f ON vs.id = f.set_id 
       GROUP BY vs.id 
-      ORDER BY vs.created_at DESC
+      ORDER BY vs.sort_order ASC, vs.created_at DESC
     `).all();
         res.json(sets);
     } catch (error) {
@@ -160,17 +160,18 @@ router.delete('/sets/:id', (req, res) => {
     }
 });
 
-// Update vocabulary set name/description
+// Update vocabulary set name/description/default_face
 router.patch('/sets/:id', (req, res) => {
     try {
-        const { name, description } = req.body;
+        const { name, description, default_face } = req.body;
         const result = db.prepare(`
       UPDATE vocabulary_sets 
       SET name = COALESCE(?, name), 
           description = COALESCE(?, description),
+          default_face = COALESCE(?, default_face),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(name, description, req.params.id);
+    `).run(name, description, default_face, req.params.id);
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Vocabulary set not found' });
@@ -213,6 +214,35 @@ router.post('/sets/:id/reset', (req, res) => {
         `).run(req.params.id);
 
         res.json({ message: 'All flashcards reset successfully', count: result.changes });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Reorder vocabulary sets
+router.post('/sets/reorder', (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+
+        if (!Array.isArray(orderedIds)) {
+            return res.status(400).json({ error: 'orderedIds must be an array' });
+        }
+
+        const updateOrder = db.prepare(`
+            UPDATE vocabulary_sets 
+            SET sort_order = ?
+            WHERE id = ?
+        `);
+
+        const updateMany = db.transaction((ids) => {
+            ids.forEach((id, index) => {
+                updateOrder.run(index, id);
+            });
+        });
+
+        updateMany(orderedIds);
+
+        res.json({ message: 'Sets reordered successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
